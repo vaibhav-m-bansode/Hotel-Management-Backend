@@ -10,6 +10,7 @@ import com.example.airbnb.dto.GuestDto;
 import com.example.airbnb.entity.*;
 import com.example.airbnb.entity.enums.BookingStatus;
 import com.example.airbnb.repository.*;
+import com.example.airbnb.strategy.PricingService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class BookingServiceImpl implements BookingService {
     private final InventoryRepository inventoryRepository;
     private final HotelRepository hotelRepository;
     private final RoomRepository roomRepository;
+    private final PricingService pricingService;
 
 
     @Override
@@ -48,7 +50,7 @@ public class BookingServiceImpl implements BookingService {
 
         //finding the required inventory and locking it so other cannot access that inventory for particular time, prematurely
         List<Inventory> inventoryList = inventoryRepository.findAndLockAvailableInventory(bookingRequest.roomId(), bookingRequest.checkInDate(), bookingRequest.checkOutDate(), bookingRequest.roomsCount());
-        Long daysCount = ChronoUnit.DAYS.between(bookingRequest.checkInDate(), bookingRequest.checkOutDate()) + 1;
+        long daysCount = ChronoUnit.DAYS.between(bookingRequest.checkInDate(), bookingRequest.checkOutDate()) + 1;
 
         if (inventoryList.size() < daysCount) {
             throw new IllegalStateException("Inventory Not Available");
@@ -67,9 +69,17 @@ public class BookingServiceImpl implements BookingService {
         User user = getUser();
 
         //todo : calculate dynamic pricing
+        BigDecimal price = pricingService.calculatePrice( inventoryList.get(1));
 
-
-        Booking booking = Booking.builder().status(BookingStatus.RESERVED).hotel(hotel).room(room).checkInDate(bookingRequest.checkInDate()).checkOutDate(bookingRequest.checkOutDate()).user(user).amount(BigDecimal.TEN).roomsCount(bookingRequest.roomsCount()).build();
+        Booking booking = Booking.builder()
+                .status(BookingStatus.RESERVED)
+                .hotel(hotel).room(room)
+                .checkInDate(bookingRequest.checkInDate())
+                .checkOutDate(bookingRequest.checkOutDate())
+                .user(user)
+                .amount(price)
+                .roomsCount(bookingRequest.roomsCount())
+                .build();
 
         log.info("Creating a Booking for {}", booking.toString());
 

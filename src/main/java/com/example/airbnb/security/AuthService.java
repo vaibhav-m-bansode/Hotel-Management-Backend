@@ -1,5 +1,6 @@
 package com.example.airbnb.security;
 
+import com.example.airbnb.Exceptions.ResourceNotFoundException;
 import com.example.airbnb.Mapper.UserMapper;
 import com.example.airbnb.dto.LoginDTO;
 import com.example.airbnb.dto.SignUpRequestDTO;
@@ -60,5 +61,11 @@ public class AuthService {
 
     }
 
+    public String refreshToken(String refreshToken) {
+        Long id = jWTService.getUserIdFromToken(refreshToken);
+
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return jWTService.generateRefreshToken(user);
+    }
 
 }
