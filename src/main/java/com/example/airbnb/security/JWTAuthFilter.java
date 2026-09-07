@@ -2,6 +2,7 @@ package com.example.airbnb.security;
 
 import com.example.airbnb.Exceptions.ResourceNotFoundException;
 import com.example.airbnb.entity.User;
+import com.example.airbnb.service.UserService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
