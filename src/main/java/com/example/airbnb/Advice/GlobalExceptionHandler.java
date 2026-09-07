@@ -1,6 +1,7 @@
 package com.example.airbnb.Advice;
 
 import com.example.airbnb.Exceptions.ResourceNotFoundException;
+import com.example.airbnb.Exceptions.UnAuthorizedException;
 import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +15,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleResourceNotFound(ResourceNotFoundException ex) {
-        ApiError apiError = new ApiError(ex.getLocalizedMessage(), HttpStatus.NOT_FOUND);
-        return ErrorResponseEntity(apiError);
+        return errorResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
-    private ResponseEntity<ApiResponse<?>> ErrorResponseEntity(ApiError apiError) {
-        return new ResponseEntity<>(new ApiResponse<>(apiError), apiError.getStatus());
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleGenericException(Exception ex) {
-        ApiError apiError = new ApiError(ex.getLocalizedMessage(), HttpStatus.NOT_FOUND);
-
-        return ErrorResponseEntity(apiError);
+    @ExceptionHandler(UnAuthorizedException.class)
+    public ResponseEntity<ApiResponse<?>> handleUnauthorized(UnAuthorizedException ex) {
+        return errorResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -35,24 +29,32 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .findFirst()
                 .orElse("Validation error");
-        ApiError apiError = new ApiError(message, HttpStatus.BAD_REQUEST);
 
-        return ErrorResponseEntity(apiError);
+        return errorResponse(message, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiResponse<?>> handleJwtException(JwtException ex) {
-        ApiError apiError = new ApiError(ex.getLocalizedMessage(), HttpStatus.UNAUTHORIZED);
-        return ErrorResponseEntity(apiError);
+        return errorResponse("Invalid or expired authentication token", HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<?>> handleAccessDeniedJwtException(JwtException ex) {
-        ApiError apiError = new ApiError(ex.getLocalizedMessage(), HttpStatus.UNAUTHORIZED);
-        return ErrorResponseEntity(apiError);
+    public ResponseEntity<ApiResponse<?>> handleAccessDenied(AccessDeniedException ex) {
+        return errorResponse("You do not have permission to access this resource", HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgument(IllegalArgumentException ex) {
+        return errorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<?>> handleGenericException(Exception ex) {
+        return errorResponse("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
-
+    private ResponseEntity<ApiResponse<?>> errorResponse(String message, HttpStatus status) {
+        ApiError apiError = new ApiError(message, status);
+        return ResponseEntity.status(status).body(new ApiResponse<>(apiError));
+    }
 }
