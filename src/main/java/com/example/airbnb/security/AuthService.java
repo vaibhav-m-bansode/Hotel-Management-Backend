@@ -25,47 +25,44 @@ public class AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final JWTService jWTService;
+    private final JWTService jwtService;
 
     public UserDto signUp(SignUpRequestDTO signUpRequestDTO) {
-
         String username = signUpRequestDTO.username();
 
-        if (userRepository.findByUsername(signUpRequestDTO.username()).isPresent()) {
-            throw new RuntimeException("User already present with username: " + signUpRequestDTO.username());
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("User already present with username: " + username);
         }
 
         User user = new User();
-        user.setUsername(signUpRequestDTO.username());
+        user.setUsername(username);
         user.setPassword(passwordEncoder.encode(signUpRequestDTO.password()));
         user.setRole(Set.of(Role.GUEST));
-        user = userRepository.save(user);
 
-        return userMapper.toDto(user);
+        return userMapper.toDto(userRepository.save(user));
     }
 
     public String[] login(LoginDTO loginDTO) {
-
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.username(), loginDTO.password()));
+                new UsernamePasswordAuthenticationToken(
+                        loginDTO.username(),
+                        loginDTO.password()));
 
         User user = (User) authentication.getPrincipal();
 
-        String[] arr = new String[2];
-
-        if (user != null) {
-            arr[0] = jWTService.generateAccessToken(user);
-            arr[1] = jWTService.generateRefreshToken(user);
-        }
-        return arr;
-
+        return new String[]{
+                jwtService.generateAccessToken(user),
+                jwtService.generateRefreshToken(user)
+        };
     }
 
     public String refreshToken(String refreshToken) {
-        Long id = jWTService.getUserIdFromToken(refreshToken);
+        Long id = jwtService.getUserIdFromToken(refreshToken);
 
-        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        return jWTService.generateRefreshToken(user);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with id: " + id));
+
+        return jwtService.generateAccessToken(user);
     }
-
 }
