@@ -1,6 +1,5 @@
 package com.example.airbnb.entity;
 
-
 import com.example.airbnb.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,11 +18,12 @@ import java.util.stream.Collectors;
 @Setter
 @Table(name = "app_user")
 public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false)
@@ -38,6 +38,10 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (role == null) {
+            return Set.of();
+        }
+
         return role.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toSet());
