@@ -15,18 +15,20 @@ import org.springframework.web.bind.annotation.*;
 public class WebHookController {
 
     private final BookingService bookingService;
-    @Value("${stripe.webhook.secrete}")
-    private String endPointSecrete;
+
+    @Value("${stripe.webhook.secret}")
+    private String endpointSecret;
 
     @PostMapping("/payment")
-    public ResponseEntity<Void> capturePayment(@RequestBody String payload,
-                                               @RequestHeader("Stripe-Signature") String sigHeader) {
-        try{
-            Event event = Webhook.constructEvent(payload,sigHeader,endPointSecrete);
+    public ResponseEntity<Void> capturePayment(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String signatureHeader) {
+        try {
+            Event event = Webhook.constructEvent(payload, signatureHeader, endpointSecret);
             bookingService.capturePayments(event);
             return ResponseEntity.noContent().build();
-        }catch (SignatureVerificationException e){
-            throw new RuntimeException(e);
+        } catch (SignatureVerificationException e) {
+            throw new IllegalArgumentException("Invalid Stripe webhook signature", e);
         }
     }
 }
