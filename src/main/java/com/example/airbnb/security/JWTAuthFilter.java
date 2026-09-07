@@ -1,6 +1,7 @@
 package com.example.airbnb.security;
 
 import com.example.airbnb.entity.User;
+import com.example.airbnb.service.UserService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -24,7 +24,7 @@ import java.io.IOException;
 public class JWTAuthFilter extends OncePerRequestFilter {
 
     private final JWTService jwtService;
-    private final UserDetailsService userDetailsService;
+    private final UserService userService;
 
     @Autowired
     @Qualifier("handlerExceptionResolver")
@@ -38,20 +38,18 @@ public class JWTAuthFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         try {
-            final String requestTokenHeader = request.getHeader("Authorization");
+            String authorizationHeader = request.getHeader("Authorization");
 
-            if (requestTokenHeader == null || !requestTokenHeader.startsWith("Bearer ")) {
+            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            String token = requestTokenHeader.substring(7);
+            String token = authorizationHeader.substring(7);
             Long userId = jwtService.getUserIdFromToken(token);
 
-            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                User user = (User) userDetailsService.loadUserByUsername(
-                        userServiceUsername(userId)
-                );
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                User user = userService.getUserByID(userId);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -71,9 +69,5 @@ public class JWTAuthFilter extends OncePerRequestFilter {
         } catch (JwtException | NumberFormatException exception) {
             handlerExceptionResolver.resolveException(request, response, null, exception);
         }
-    }
-
-    private String userServiceUsername(Long userId) {
-        return String.valueOf(userId);
     }
 }
