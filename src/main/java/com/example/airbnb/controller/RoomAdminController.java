@@ -18,32 +18,35 @@ public class RoomAdminController {
 
     @GetMapping
     public ResponseEntity<List<RoomDTO>> getAllRoomsInHotel(@PathVariable Long hotelId) {
-        List<RoomDTO> rooms = roomService.getAllRoomsInHotel(hotelId);
-        return ResponseEntity.ok().body(rooms);
+        return ResponseEntity.ok(roomService.getAllRoomsInHotel(hotelId));
     }
 
     @GetMapping("/{roomId}")
-    public ResponseEntity<RoomDTO> getRoomById(@PathVariable Long roomId, @PathVariable String hotelId) {
-        RoomDTO room = roomService.getRoomById(roomId);
-        return ResponseEntity.ok().body(room);
+    public ResponseEntity<RoomDTO> getRoomById(@PathVariable Long hotelId, @PathVariable Long roomId) {
+        return ResponseEntity.ok(roomService.getRoomById(roomId));
     }
 
     @PostMapping
-    public ResponseEntity<RoomDTO> createNewRoom(@RequestBody RoomDTO roomDTO, @PathVariable Long hotelId) {
+    public ResponseEntity<RoomDTO> createNewRoom(
+            @PathVariable Long hotelId,
+            @RequestBody RoomDTO roomDTO) {
         RoomDTO createdRoom = roomService.CreateRoom(hotelId, roomDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
     }
 
     @DeleteMapping("/{roomId}")
-    public ResponseEntity<RoomDTO> deleteRoom(@PathVariable Long hotelId, @PathVariable Long roomId) {
+    public ResponseEntity<Void> deleteRoom(
+            @PathVariable Long hotelId,
+            @PathVariable Long roomId) {
         roomService.deleteRoomById(roomId);
         return ResponseEntity.noContent().build();
-
     }
 
-    @PutMapping("/")
-    public ResponseEntity<RoomDTO> updateRoom(@RequestBody RoomDTO roomDTO) {
-        RoomDTO room = roomService.UpdateRoom(roomDTO);
-        return ResponseEntity.ok().body(room);
+    @PutMapping("/{roomId}")
+    public ResponseEntity<RoomDTO> updateRoom(
+            @PathVariable Long hotelId,
+            @PathVariable Long roomId,
+            @RequestBody RoomDTO roomDTO) {
+        return ResponseEntity.ok(roomService.UpdateRoom(roomDTO));
     }
 }
