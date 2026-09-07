@@ -67,5 +67,8 @@ public class Booking {
     )
     private List<Guest> guests;
 
+    @Column(unique = true)
+    private String paymentSessionId;
+
 
 }
