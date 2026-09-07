@@ -1,6 +1,5 @@
 package com.example.airbnb.entity;
 
-
 import com.example.airbnb.entity.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,6 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Booking {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,7 +33,7 @@ public class Booking {
     private Room room;
 
     @ManyToOne
-    //@JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(nullable = false)
@@ -44,13 +45,11 @@ public class Booking {
     @Column(nullable = false)
     private LocalDate checkOutDate;
 
-
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
@@ -65,10 +64,9 @@ public class Booking {
             joinColumns = @JoinColumn(name = "booking_id"),
             inverseJoinColumns = @JoinColumn(name = "guest_id")
     )
-    private List<Guest> guests;
+    @Builder.Default
+    private List<Guest> guests = new ArrayList<>();
 
     @Column(unique = true)
     private String paymentSessionId;
-
-
 }
